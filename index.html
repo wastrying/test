@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SplitLah 💸</title>
+  <link rel="icon" type="image/png" href="splitlahlogo.png" />
+  <style>
+    /* ===============
+       Base / Tokens
+       =============== */
+    :root{
+      --bg: #0b1020;
+      --surface: rgba(255,255,255,.96);
+      --surface-2: rgba(255,255,255,.86);
+      --text: #0f172a;
+      --muted: #6b7280;
+      --brand1: #667eea; /* indigo */
+      --brand2: #764ba2; /* purple */
+      --accent: #10b981; /* emerald */
+      --danger: #ef4444; /* red */
+      --warn: #f59e0b;  /* amber */
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --shadow-lg: 0 20px 45px rgba(0,0,0,.28);
+      --shadow-md: 0 10px 25px rgba(0,0,0,.18);
+      --ring: 0 0 0 3px rgba(102,126,234,.22);
+    }
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial;
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(118,75,162,.25), transparent 60%),
+        radial-gradient(1000px 600px at -10% 80%, rgba(102,126,234,.18), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    }
+
+    /* ===============
+       Layout
+       =============== */
+    .app{ display:grid; grid-template-columns: 260px 1fr; min-height: 100dvh; gap: 24px; padding: 24px; }
+    .sidebar{
+      position: sticky; top: 24px; height: calc(100dvh - 48px);
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 18px; display:flex; flex-direction:column; gap: 16px;
+    }
+    .logo{ width: 100%; border-radius: 12px; object-fit: contain; }
+    .welcome{ font-weight:700; font-size: 18px; }
+    .chip{ display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius: 999px; border:1px solid #e5e7eb; background:#fff; }
+    .chip.locked{ opacity:.8; cursor:not-allowed; }
+    nav.sidebar-menu{ display:flex; flex-direction:column; gap:6px; margin-top: 8px; }
+    nav.sidebar-menu button{
+      appearance:none; border:0; text-align:left; padding:10px 12px; border-radius: 12px;
+      font-size:14px; background:transparent; cursor:pointer; color:#111827;
+    }
+    nav.sidebar-menu button.active{ background: linear-gradient(90deg, rgba(102,126,234,.12), rgba(118,75,162,.12)); }
+    .sidebar-footer{ margin-top:auto; display:grid; gap:8px; }
+
+    main{
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 24px 22px 28px; position: relative; overflow: clip;
+    }
+
+    .section{ display:none; }
+    .section.active{ display:block; }
+
+    .card{ background:#fff; border: 1px solid #e5e7eb; border-radius:16px; padding:16px; box-shadow: var(--shadow-md); }
+    .grid{ display:grid; gap:14px; }
+    .grid.cols-2{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .grid.cols-3{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+
+    .row{ display:flex; gap:10px; align-items:center; }
+    .spacer{ flex:1; }
+
+    h1{ font-size:28px; margin:0 0 10px; }
+    h2{ font-size:22px; margin:18px 0 10px; }
+    h3{ font-size:18px; margin:16px 0 8px; }
+    p{ color:#374151; }
+    label{ display:block; font-size:13px; color:#374151; margin: 8px 0 6px; }
+    input[type="text"], input[type="number"], input[type="password"], select{
+      width:100%; padding:10px 12px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; outline:none;
+    }
+    input:focus, select:focus{ box-shadow: var(--ring); border-color: transparent; }
+
+    .btn{ appearance:none; border:0; border-radius:12px; padding:10px 14px; font-weight:600; cursor:pointer; }
+    .btn.primary{ background: linear-gradient(135deg, var(--brand1), var(--brand2)); color:#fff; }
+    .btn.subtle{ background:#f3f4f6; }
+    .btn.ghost{ background:transparent; border:1px solid #e5e7eb; }
+    .btn.warn{ background: var(--warn); color:#111827; }
+    .btn.danger{ background: var(--danger); color:#fff; }
+
+    .notice{ padding:10px 12px; border-radius:12px; font-size:14px; }
+    .notice.info{ background:#eff6ff; border:1px solid #bfdbfe; }
+    .notice.success{ background:#ecfdf5; border:1px solid #a7f3d0; }
+    .notice.warn{ background:#fffbeb; border:1px solid #fcd34d; }
+    .notice.error{ background:#fef2f2; border:1px solid #fecaca; }
+
+    .hr{ height:1px; background:#e5e7eb; margin:16px 0; }
+
+    /* Floating money */
+    .floating-money { position: fixed; inset:0; pointer-events: none; z-index: 0; }
+    .floating-money span { position:absolute; font-size:2.5rem; opacity:.30; animation:floatAround 18s ease-in-out infinite; }
+    @keyframes floatAround { 0%{transform:translate(0,0) rotate(0deg); opacity:.3;} 25%{transform:translate(40px,-60px) rotate(20deg); opacity:.5;} 50%{transform:translate(-50px,-120px) rotate(-15deg); opacity:.4;} 75%{transform:translate(30px,-40px) rotate(10deg); opacity:.6;} 100%{transform:translate(0,0) rotate(0deg); opacity:.3;} }
+
+    /* Auth cards layout */
+    .center-wrap{ display:grid; place-items:center; min-height: calc(100dvh - 48px); }
+    .auth-wrap{ width:min(880px, 92vw); display:grid; grid-template-columns: 1.2fr 1fr; gap:16px; }
+    .auth-hero{ padding: 18px; border-radius:16px; background: linear-gradient(135deg, rgba(102,126,234,.15), rgba(118,75,162,.15)); border:1px dashed rgba(102,126,234,.35); }
+
+    .muted{ color: var(--muted); }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .app{ grid-template-columns: 1fr; padding: 16px; }
+      .sidebar{ position: relative; height: auto; top: 0; }
+    }
+    @media (max-width: 720px){
+      .auth-wrap{ grid-template-columns: 1fr; }
+      .grid.cols-3{ grid-template-columns: 1fr; }
+      .grid.cols-2{ grid-template-columns: 1fr; }
+      .logo{ max-height: 120px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-money">
+    <span style="top:5%;left:10%;animation-delay:0s;">💲</span>
+    <span style="top:15%;left:80%;animation-delay:2s;">💵</span>
+    <span style="top:30%;left:25%;animation-delay:4s;">💲</span>
+    <span style="top:45%;left:60%;animation-delay:6s;">💵</span>
+    <span style="top:55%;left:35%;animation-delay:8s;">💲</span>
+    <span style="top:65%;left:75%;animation-delay:10s;">💵</span>
+    <span style="top:75%;left:15%;animation-delay:12s;">💲</span>
+    <span style="top:85%;left:50%;animation-delay:14s;">💵</span>
+  </div>
+
+  <div class="app" id="app" style="display:none;">
+    <aside class="sidebar">
+      <img class="logo" src="splitlahlogo.png" alt="SplitLah" onerror="this.style.display='none'" />
+      <div class="welcome" id="welcomeText">👋 Welcome!</div>
+      <div id="planBadge" class="chip">Current plan: <strong id="currentPlan" style="margin-left:6px;">Basic</strong></div>
+      <nav class="sidebar-menu" id="menu"></nav>
+      <div class="sidebar-footer">
+        <button class="btn ghost" id="btnChangePlan">🔄 Change Plan</button>
+        <button class="btn danger" id="btnLogout">🚪 Log out</button>
+      </div>
+    </aside>
+
+    <main>
+      <!-- Sections -->
+      <section id="section-home" class="section active"></section>
+      <section id="section-groups" class="section"></section>
+      <section id="section-normal" class="section"></section>
+      <section id="section-budget" class="section"></section>
+      <section id="section-currency" class="section"></section>
+      <section id="section-plan" class="section"></section>
+    </main>
+  </div>
+
+  <!-- Auth / Plan gate screen -->
+  <div class="center-wrap" id="authView">
+    <div class="auth-wrap">
+      <div class="card auth-hero">
+        <h1>SplitLah 💸</h1>
+        <p class="muted">Smart, friendly bill splitting with groups, budgets, and currency conversion.</p>
+        <div class="hr"></div>
+        <div class="notice info">This single-file version stores data in your browser only (localStorage). For multi-device logins, add a backend (e.g., Firebase/Auth + Firestore or your own API).</div>
+        <h3>Why you'll like it</h3>
+        <ul>
+          <li>Create & save groups</li>
+          <li>Split evenly, by percentage, or by fixed amounts</li>
+          <li>Track spending against a budget</li>
+          <li>Convert currencies with live rates</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <h2 id="authHeading">🔐 Log in</h2>
+          <button id="toggleAuth" class="btn ghost">Create Account</button>
+        </div>
+        <div id="loginForm">
+          <label>Username</label>
+          <input type="text" id="loginUsername" autocomplete="username" />
+          <label>Password</label>
+          <input type="password" id="loginPassword" autocomplete="current-password" />
+          <div class="row" style="margin-top:12px; gap:10px;">
+            <button class="btn primary" id="btnLogin">Login</button>
+          </div>
+        </div>
+        <div id="signupForm" style="display:none;">
+          <label>Choose a Username</label>
+          <input type="text" id="signupUsername" autocomplete="username" />
+          <label>Choose a Password</label>
+          <input type="password" id="signupPassword" autocomplete="new-password" />
+          <div class="row" style="margin-top:12px; gap:10px;">
+            <button class="btn primary" id="btnSignup">Create Account</button>
+          </div>
+        </div>
+        <div id="authMessage" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =======================================================
+       Tiny client-side "store" (localStorage) & crypto helpers
+       ======================================================= */
+    const LS_USERS_KEY = 'splitlah_users';
+    const LS_CURRENT_USER = 'splitlah_current_user';
+    const DEFAULT_PLAN = { type: 'Basic', duration: 'Monthly' };
+
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    const ui = {
+      show(el){ el.style.display = ''; },
+      hide(el){ el.style.display = 'none'; },
+      html(el, content){ el.innerHTML = content; },
+      msg(where, type, text){ where.innerHTML = `<div class="notice ${type}">${text}</div>`; },
+    };
+
+    function getUsers(){
+      try{ return JSON.parse(localStorage.getItem(LS_USERS_KEY)) || []; }
+      catch{ return []; }
+    }
+    function saveUsers(users){ localStorage.setItem(LS_USERS_KEY, JSON.stringify(users)); }
+    function findUser(uname){ return getUsers().find(u => u.username.toLowerCase() === String(uname||'').toLowerCase()); }
+
+    // Web Crypto (PBKDF2-SHA-256). Not bcrypt, but solid for client-only demo.
+    async function pbkdf2Hash(password, saltBase64=null, iterations=150000){
+      const enc = new TextEncoder();
+      const salt = saltBase64 ? Uint8Array.from(atob(saltBase64), c=>c.charCodeAt(0)) : crypto.getRandomValues(new Uint8Array(16));
+      const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+      const bits = await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt, iterations }, keyMaterial, 256);
+      const hashBytes = new Uint8Array(bits);
+      const hashB64 = btoa(String.fromCharCode(...hashBytes));
+      const saltB64 = btoa(String.fromCharCode(...salt));
+      return { alg:'PBKDF2-SHA256', iterations, salt: saltB64, hash: hashB64 };
+    }
+    async function verifyPassword(password, rec){
+      if(!rec || !rec.password) return false;
+      const { salt, iterations, hash } = rec.password;
+      const out = await pbkdf2Hash(password, salt, iterations);
+      return out.hash === hash;
+    }
+
+    function ensureDemoDefaults(){
+      if(!localStorage.getItem(LS_USERS_KEY)){
+        saveUsers([]);
+      }
+    }
+
+    /* =======================================================
+       Session / Router
+       ======================================================= */
+    const state = {
+      route: 'auth', // 'auth' | 'plan' | 'main'
+      user: null, // { username, groups, plan_type, plan_duration, password{...} }
+      currentMembers: [],
+      budget: { remaining: 0, set: 0, loop: false },
+      rates: { USD:1.0 },
+      currencyMap: {
+        USD:"United States", EUR:"Eurozone", JPY:"Japan", MYR:"Malaysia", INR:"India", SGD:"Singapore",
+        GBP:"United Kingdom", AUD:"Australia", CAD:"Canada", CHF:"Switzerland", CNY:"China", HKD:"Hong Kong"
+      }
+    };
+
+    function saveSessionUser(){
+      if(!state.user) return;
+      const users = getUsers();
+      const ix = users.findIndex(u => u.username.toLowerCase() === state.user.username.toLowerCase());
+      if(ix !== -1){ users[ix] = state.user; saveUsers(users); }
+    }
+    function setRoute(r){ state.route = r; renderApp(); }
+
+    /* =======================================================
+       Auth view logic
+       ======================================================= */
+    const authView = $('#authView');
+    const appShell = $('#app');
+
+    const toggleAuthBtn = $('#toggleAuth');
+    const authHeading = $('#authHeading');
+    const loginForm = $('#loginForm');
+    const signupForm = $('#signupForm');
+    const authMsg = $('#authMessage');
+
+    toggleAuthBtn.addEventListener('click', () => {
+      if(loginForm.style.display === 'none'){
+        ui.hide(signupForm); ui.show(loginForm); authHeading.textContent = '🔐 Log in'; toggleAuthBtn.textContent='Create Account';
+      } else {
+        ui.hide(loginForm); ui.show(signupForm); authHeading.textContent = '✨ Create account'; toggleAuthBtn.textContent='Back to Login';
+      }
+      ui.msg(authMsg, 'info', '');
+    });
+
+    $('#btnSignup').addEventListener('click', async () => {
+      const username = $('#signupUsername').value.trim();
+      const password = $('#signupPassword').value;
+      if(!username || !password){ return ui.msg(authMsg, 'warn', '⚠️ Please fill in all fields.'); }
+      if(findUser(username)){ return ui.msg(authMsg, 'error', '🚫 Username already exists. Try another one.'); }
+      const pass = await pbkdf2Hash(password);
+      const userRec = { username, password: pass, groups: {}, plan_type: DEFAULT_PLAN.type, plan_duration: DEFAULT_PLAN.duration };
+      const users = getUsers(); users.push(userRec); saveUsers(users);
+      ui.msg(authMsg, 'success', '✅ Account created. You can now log in.');
+      $('#signupPassword').value = '';
+    });
+
+    $('#btnLogin').addEventListener('click', async () => {
+      const username = $('#loginUsername').value.trim();
+      const password = $('#loginPassword').value;
+      if(!username || !password){ return ui.msg(authMsg, 'warn', '⚠️ Please fill in all fields.'); }
+      const rec = findUser(username);
+      if(!rec){ return ui.msg(authMsg, 'error', '❌ Invalid username or password.'); }
+      const ok = await verifyPassword(password, rec);
+      if(!ok){ return ui.msg(authMsg, 'error', '❌ Invalid username or password.'); }
+      state.user = rec; localStorage.setItem(LS_CURRENT_USER, rec.username);
+      $('#loginPassword').value = '';
+      setRoute('plan');
+    });
+
+    /* =======================================================
+       App shell & shared widgets
+       ======================================================= */
+    const menu = $('#menu');
+    const welcomeText = $('#welcomeText');
+    const currentPlan = $('#currentPlan');
+
+    $('#btnLogout').addEventListener('click', () => {
+      localStorage.removeItem(LS_CURRENT_USER); state.user = null; setRoute('auth');
+    });
+    $('#btnChangePlan').addEventListener('click', () => setRoute('plan'));
+
+    function renderSidebar(){
+      if(!state.user) return;
+      welcomeText.textContent = `👋 Welcome ${state.user.username}!`;
+      currentPlan.textContent = state.user.plan_type.startsWith('Premium')
+        ? `${state.user.plan_type} (${state.user.plan_duration})`
+        : state.user.plan_type;
+
+      const opts = [
+        { key:'home', label:'🏠 Home' },
+        { key:'groups', label:'1️⃣ Create Groups' },
+        { key:'normal', label:'2️⃣ Normal Split' }
+      ];
+      if(state.user.plan_type.startsWith('Premium')){
+        opts.push({ key:'budget', label:'3️⃣ Split within Budget' });
+        opts.push({ key:'currency', label:'4️⃣ Split + Currency' });
+      }
+
+      menu.innerHTML = '';
+      opts.forEach((o,i) => {
+        const b = document.createElement('button');
+        b.textContent = o.label; b.dataset.section = o.key;
+        b.addEventListener('click', () => showSection(o.key));
+        if(i===0) b.classList.add('active');
+        menu.appendChild(b);
+      });
+    }
+
+    function showSection(key){
+      $$('.sidebar-menu button').forEach(b => b.classList.toggle('active', b.dataset.section === key));
+      $$('.section').forEach(s => s.classList.remove('active'));
+      $('#section-'+key).classList.add('active');
+      if(key==='home') renderHome();
+      if(key==='groups') renderGroups();
+      if(key==='normal') renderNormalSplit();
+      if(key==='budget') renderBudget();
+      if(key==='currency') renderCurrency();
+    }
+
+    /* =======================================================
+       Plan Selection
+       ======================================================= */
+    function renderPlan(){
+      const host = $('#section-plan');
+      host.innerHTML = `
+        <h1>Welcome to SplitLah 💸</h1>
+        <p><strong>SplitLah</strong> helps you split bills smartly and fairly. Track spending, manage groups, and handle currency conversion with ease. Choose your plan to get started!</p>
+        <div class="hr"></div>
+        <div class="grid cols-2">
+          <div class="card">
+            <h2>💼 Choose Your Plan</h2>
+            <div class="row" style="gap:10px; flex-wrap:wrap;">
+              <label style="margin:0;">Plan</label>
+              <select id="planSelect">
+                <option>Basic</option>
+                <option>Premium Solo</option>
+                <option>Premium Duo</option>
+                <option>Premium Family</option>
+                <option>Premium Business</option>
+              </select>
+              <label style="margin-left:auto; margin-right:-6px;">Billing</label>
+              <div class="row" style="gap:8px;">
+                <label class="muted" style="margin:0;">Monthly</label>
+                <input type="radio" name="bill" id="billMonthly" checked />
+                <label class="muted" style="margin:0 0 0 8px;">Yearly</label>
+                <input type="radio" name="bill" id="billYearly" />
+              </div>
+            </div>
+            <div id="planText" class="notice info" style="margin-top:12px;"></div>
+            <div class="row" style="margin-top:12px; gap:10px;">
+              <button class="btn primary" id="btnContinueApp">🚀 Continue to App</button>
+              <span class="spacer"></span>
+              <button class="btn ghost" id="btnBackAuth">Back</button>
+            </div>
+          </div>
+          <div class="card">
+            <div id="planFeatures"></div>
+          </div>
+        </div>`;
+
+      const planSelect = $('#planSelect');
+      const planText = $('#planText');
+      const billMonthly = $('#billMonthly');
+      const billYearly = $('#billYearly');
+      const features = $('#planFeatures');
+
+      function updatePlanUi(){
+        const p = planSelect.value;
+        const isBasic = p === 'Basic';
+        const duration = billYearly.checked ? 'Yearly' : 'Monthly';
+        const prices = {
+          'Premium Solo': { Monthly:'$2.99 / mo', Yearly:'$29.90 / yr' },
+          'Premium Duo': { Monthly:'$4.98 / mo', Yearly:'$49.80 / yr' },
+          'Premium Family': { Monthly:'$12.99 / mo', Yearly:'$129.90 / yr' },
+          'Premium Business': { Monthly:'$24.99 / mo', Yearly:'$249.90 / yr' },
+        };
+        if(isBasic){
+          planText.className = 'notice info';
+          planText.textContent = '✅ Basic Plan: Free. Functions: 1) Create Groups  2) Normal Split';
+        } else {
+          const price = prices[p][duration];
+          planText.className = 'notice success';
+          planText.textContent = `🌟 ${p} – ${price}. Includes: 1) Create Groups  2) Normal Split  3) Split within Budget  4) Split + Currency`;
+        }
+        features.innerHTML = `
+          <h3>${isBasic?'Basic Features':'Premium Features'}</h3>
+          <ul style="margin-top:6px;">
+            <li>Create & manage groups</li>
+            <li>Split evenly, by % or by fixed amounts</li>
+            ${isBasic?'':'<li>Budget session with running balance</li>'}
+            ${isBasic?'':'<li>Currency conversion with live rates</li>'}
+          </ul>`;
+      }
+      [planSelect, billMonthly, billYearly].forEach(el => el.addEventListener('change', updatePlanUi));
+      updatePlanUi();
+
+      $('#btnContinueApp').addEventListener('click', () => {
+        if(!state.user) return;
+        const p = planSelect.value;
+        const duration = $('#billYearly').checked ? 'Yearly' : 'Monthly';
+        state.user.plan_type = p;
+        state.user.plan_duration = duration;
+        saveSessionUser();
+        setRoute('main');
+      });
+      $('#btnBackAuth').addEventListener('click', () => setRoute('auth'));
+    }
+
+    /* =======================================================
+       Home
+       ======================================================= */
+    function renderHome(){
+      const s = $('#section-home');
+      const planType = state.user?.plan_type || 'Basic';
+      const duration = state.user?.plan_duration || 'Monthly';
+      s.innerHTML = `
+        <h1>🏠 SplitLah Home</h1>
+        <p>Welcome, <strong>${state.user.username}</strong>! You are on the <strong>${planType}</strong>${planType.startsWith('Premium')?` (${duration})`:''} plan.</p>
+        <div class="hr"></div>
+        <div class="grid cols-2">
+          <div class="card">
+            <h3>Navigate</h3>
+            <p class="muted">Use the menu on the left to access features.</p>
+            <ul>
+              <li>1️⃣ Create Groups</li>
+              <li>2️⃣ Normal Split</li>
+              ${planType.startsWith('Premium')?'<li>3️⃣ Split within Budget</li><li>4️⃣ Split + Currency</li>':''}
+            </ul>
+            <div class="row" style="margin-top:10px; gap:10px;">
+              <button class="btn ghost" onclick="showSection('groups')">Go to Groups</button>
+              <button class="btn ghost" onclick="showSection('normal')">Go to Normal Split</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Quick Tips</h3>
+            <ul>
+              <li>Save groups to reuse members across features.</li>
+              <li>In <em>By Percentage</em>, total must add to exactly 100%.</li>
+              <li>In <em>By Money</em>, amounts must match the total bill.</li>
+            </ul>
+          </div>
+        </div>`;
+    }
+
+    /* =======================================================
+       Shared: Select Group widget
+       ======================================================= */
+    function groupSelector(){
+      const groups = state.user.groups || {};
+      const hasGroups = Object.keys(groups).length > 0;
+      return `
+        <div class="card">
+          <h3>Group</h3>
+          <div class="row" style="gap:10px; flex-wrap:wrap; align-items:center;">
+            <label style="margin:0;">Mode</label>
+            <select id="groupMode">
+              <option value="new">Create new group</option>
+              <option value="saved" ${hasGroups?'':'disabled'}>Use saved group</option>
+            </select>
+            ${!hasGroups?'<span class="notice warn" style="margin-left:auto;">No saved groups yet.</span>':''}
+          </div>
+          <div id="groupPicker" style="margin-top:10px;"></div>
+        </div>`;
+    }
+
+    function mountGroupSelector(host){
+      const picker = $('#groupPicker', host);
+      function renderNew(){
+        picker.innerHTML = `
+          <label>Number of people</label>
+          <input type="number" id="numPeople" min="1" step="1" value="2" />
+          <div id="peopleInputs" class="grid cols-2" style="margin-top:8px;"></div>`;
+        const tbl = $('#peopleInputs', host);
+        function draw(n){
+          tbl.innerHTML = '';
+          for(let i=0;i<n;i++){
+            const div = document.createElement('div');
+            div.innerHTML = `<label>Person ${i+1}</label><input type="text" data-role="memberName" placeholder="Name">`;
+            tbl.appendChild(div);
+          }
+        }
+        draw(Number($('#numPeople', host).value||2));
+        $('#numPeople', host).addEventListener('input', e => draw(Number(e.target.value||1)) );
+      }
+      function renderSaved(){
+        const names = Object.keys(state.user.groups||{});
+        picker.innerHTML = names.length ? `
+          <label>Choose a group</label>
+          <select id="savedGroup">${names.map(n=>`<option>${n}</option>`).join('')}</select>
+        ` : `<div class="notice warn">No saved groups found. Please create one first.</div>`;
+      }
+      function selectMode(){
+        const mode = $('#groupMode', host).value;
+        if(mode==='saved') renderSaved(); else renderNew();
+      }
+      $('#groupMode', host).addEventListener('change', selectMode);
+      selectMode();
+    }
+
+    function extractMembersFromSelector(host){
+      const mode = $('#groupMode', host).value;
+      if(mode==='saved'){
+        const g = $('#savedGroup', host)?.value;
+        return g ? (state.user.groups[g]||[]) : [];
+      }
+      const inputs = $$('input[data-role="memberName"]', host);
+      return inputs.map(i => i.value.trim()).filter(Boolean);
+    }
+
+    /* =======================================================
+       Create & Manage Groups
+       ======================================================= */
+    function renderGroups(){
+      const s = $('#section-groups');
+      const groups = state.user.groups || {};
+      s.innerHTML = `
+        <h1>👥 Create & Manage Groups</h1>
+        <div class="grid cols-2">
+          <div class="card" id="groupCreate">
+            <label>New group name</label>
+            <input type="text" id="newGroupName" placeholder="e.g., Sushi Night Crew" />
+            ${groupSelector()}
+            <div class="row" style="margin-top:12px; gap:10px;">
+              <button class="btn primary" id="btnSaveGroup">💾 Save Group</button>
+            </div>
+            <div id="groupMsg" style="margin-top:8px;"></div>
+          </div>
+          <div class="card">
+            <h3>Saved Groups</h3>
+            <div id="groupsList"></div>
+          </div>
+        </div>`;
+
+      mountGroupSelector($('#groupCreate'));
+
+      function redrawList(){
+        const list = $('#groupsList');
+        const entries = Object.entries(state.user.groups||{});
+        if(!entries.length){ list.innerHTML = '<div class="notice info">No groups yet.</div>'; return; }
+        list.innerHTML = '';
+        entries.forEach(([g, members]) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'card'; wrap.style.marginTop = '10px';
+          wrap.innerHTML = `
+            <div class="row" style="align-items:center; gap:10px;">
+              <strong style="font-size:16px;">${g}</strong>
+              <span class="muted">→ ${members.join(', ')}</span>
+              <span class="spacer"></span>
+              <input type="text" value="${g}" data-role="rename" style="max-width: 50%"/>
+              <button class="btn ghost" data-role="doRename">✏️ Rename</button>
+              <button class="btn danger" data-role="del">🗑️ Delete</button>
+            </div>`;
+          $('#groupsList').appendChild(wrap);
+          $('[data-role="del"]', wrap).addEventListener('click', () => {
+            delete state.user.groups[g]; saveSessionUser(); redrawList();
+          });
+          $('[data-role="doRename"]', wrap).addEventListener('click', () => {
+            const newName = $('[data-role="rename"]', wrap).value.trim();
+            if(!newName){ return alert('New name cannot be empty.'); }
+            if(newName!==g && state.user.groups[newName]){ return alert('A group with that name already exists.'); }
+            state.user.groups[newName] = members; delete state.user.groups[g]; saveSessionUser(); redrawList();
+          });
+        });
+      }
+      redrawList();
+
+      $('#btnSaveGroup').addEventListener('click', () => {
+        const name = $('#newGroupName').value.trim();
+        if(!name) return ui.msg($('#groupMsg'), 'warn', 'Enter a group name.');
+        const members = extractMembersFromSelector($('#groupCreate'));
+        const valid = members.filter(Boolean);
+        if(!valid.length) return ui.msg($('#groupMsg'), 'warn', 'Enter at least one name.');
+        const maxGroups = state.user.plan_type.startsWith('Basic') ? 5 : Infinity;
+        const exists = state.user.groups[name];
+        if(!exists && Object.keys(state.user.groups||{}).length >= maxGroups){
+          return ui.msg($('#groupMsg'), 'warn', '🚫 Group limit reached for Basic plan.');
+        }
+        state.user.groups[name] = valid; saveSessionUser();
+        ui.msg($('#groupMsg'), 'success', `✅ Saved group '${name}'.`);
+        renderGroups();
+      });
+    }
+
+    /* =======================================================
+       Normal Split
+       ======================================================= */
+    function splitByPercentage(total, members, host){
+      const tbl = $('#pctTable', host);
+      const inputs = $$('input[data-role="pct"]', host);
+      const vals = inputs.map(i => ({ name: i.dataset.name, pct: Number(i.value||0) }));
+      const sum = vals.reduce((a,b)=>a+b.pct, 0);
+      $('#pctSum', host).textContent = sum.toFixed(2);
+      if(Math.abs(sum-100) > 0.01){
+        ui.msg($('#pctMsg', host), 'warn', `⚠️ Total = ${sum.toFixed(2)}% (must equal 100%)`); return;
+      }
+      ui.msg($('#pctMsg', host), 'success', '✅ Perfect! 100%');
+      const out = vals.map(v => `<div>${v.name} → <strong>$${(total*(v.pct/100)).toFixed(2)}</strong></div>`).join('');
+      tbl.innerHTML = out;
+    }
+
+    function splitByMoney(total, members, host){
+      const inputs = $$('input[data-role="amt"]', host);
+      const vals = inputs.map(i => ({ name: i.dataset.name, amt: Number(i.value||0) }));
+      const sum = vals.reduce((a,b)=>a+b.amt, 0);
+      const msg = $('#amtMsg', host);
+      if(sum === 0){ ui.msg(msg, 'info', 'Enter each person\'s contribution.'); return; }
+      if(Math.abs(sum-total) < 0.01){ ui.msg(msg, 'success', '✅ Perfect! Total matches the bill.'); }
+      else if(sum > total){ ui.msg(msg, 'error', `⚠️ Total entered ($${sum.toFixed(2)}) exceeds the bill ($${total.toFixed(2)}).`); }
+      else { ui.msg(msg, 'warn', `⚠️ Total entered ($${sum.toFixed(2)}) is below the bill ($${total.toFixed(2)}).`); }
+      $('#amtTable', host).innerHTML = vals.map(v => `<div>${v.name} → <strong>$${v.amt.toFixed(2)}</strong></div>`).join('');
+    }
+
+    function renderNormalSplit(){
+      const s = $('#section-normal');
+      s.innerHTML = `
+        <h1>💰 Normal Bill Split</h1>
+        ${groupSelector()}
+        <div class="card" id="normalForm" style="margin-top:12px;">
+          <label>Total bill amount ($)</label>
+          <input type="number" id="totalBill" min="0" step="0.01" value="0" />
+          <label>Method</label>
+          <select id="splitMethod">
+            <option>Evenly</option>
+            <option>By Percentage</option>
+            <option>By Money</option>
+          </select>
+          <div id="methodFields" style="margin-top:10px;"></div>
+        </div>`;
+
+      mountGroupSelector(s);
+
+      function drawMethod(){
+        const members = extractMembersFromSelector(s);
+        const total = Number($('#totalBill', s).value||0);
+        const m = $('#splitMethod', s).value;
+        const host = $('#methodFields', s);
+        if(!members.length || total<=0){ host.innerHTML = '<div class="notice info">Enter members and a total > 0 to begin.</div>'; return; }
+        if(m==='Evenly'){
+          const each = total / members.length;
+          host.innerHTML = `<h3>Results</h3>${members.map(n=>`<div>💵 ${n} pays: <strong>$${each.toFixed(2)}</strong></div>`).join('')}`;
+        }
+        if(m==='By Percentage'){
+          host.innerHTML = `<div id="pctWrap">
+            <div class="grid cols-2">${members.map((n,i)=>`<div><label>${n}'s share (%)</label><input data-role="pct" data-name="${n}" type="number" min="0" max="100" step="0.01" value="0"></div>`).join('')}</div>
+            <div class="row" style="margin-top:8px;">Total = <strong id="pctSum" style="margin:0 6px;">0.00</strong>% <button class="btn ghost" id="btnCalcPct">Calculate</button></div>
+            <div id="pctMsg" style="margin-top:8px;"></div>
+            <div id="pctTable" style="margin-top:6px;"></div>
+          </div>`;
+          $('#btnCalcPct', host).addEventListener('click', ()=> splitByPercentage(total, members, host));
+        }
+        if(m==='By Money'){
+          host.innerHTML = `<div id="amtWrap">
+            <div class="grid cols-2">${members.map((n,i)=>`<div><label>${n}'s amount ($)</label><input data-role="amt" data-name="${n}" type="number" min="0" step="0.01" value="0"></div>`).join('')}</div>
+            <div class="row" style="margin-top:8px;">
+              <button class="btn ghost" id="btnCalcAmt">Check</button>
+            </div>
+            <div id="amtMsg" style="margin-top:8px;"></div>
+            <div id="amtTable" style="margin-top:6px;"></div>
+          </div>`;
+          $('#btnCalcAmt', host).addEventListener('click', ()=> splitByMoney(total, members, host));
+        }
+      }
+
+      ['change','input'].forEach(ev=>{
+        s.addEventListener(ev, (e)=>{
+          if(['groupMode','savedGroup','numPeople','memberName','splitMethod','totalBill'].some(id => e.target.id===id || e.target.dataset?.role==='memberName')){
+            drawMethod();
+          }
+        });
+      });
+      drawMethod();
+    }
+
+    /* =======================================================
+       Split within Budget (Premium)
+       ======================================================= */
+    function renderBudget(){
+      const s = $('#section-budget');
+      s.innerHTML = `
+        <h1>📊 Split within a Budget</h1>
+        ${groupSelector()}
+        <div class="card" id="budgetForm" style="margin-top:12px;">
+          <div class="row" style="gap:10px; flex-wrap:wrap;">
+            <label style="margin:0;">Total budget ($)</label>
+            <input type="number" id="budgetTotal" min="0" step="0.01" value="${state.budget.set||0}" style="max-width:180px;"/>
+            <button class="btn ghost" id="btnApplyBudget">Apply</button>
+            <button class="btn warn" id="btnResetBudget">Reset</button>
+          </div>
+          <div class="notice info" style="margin-top:10px;">💡 Remaining budget: <strong id="budgetRemaining">$${state.budget.remaining.toFixed(2)}</strong></div>
+          <div class="hr"></div>
+          <label>Amount to spend now ($)</label>
+          <input type="number" id="spendAmount" min="0" step="0.01" value="0"/>
+          <label>Method</label>
+          <select id="budgetMethod">
+            <option>Evenly</option>
+            <option>By Percentage</option>
+            <option>By Money</option>
+          </select>
+          <div id="budgetMethodFields" style="margin-top:10px;"></div>
+          <div class="row" style="margin-top:12px; gap:10px;">
+            <button class="btn primary" id="btnDoSplit">✅ Split This Amount</button>
+            <span class="spacer"></span>
+            <button class="btn ghost" id="btnContinue" style="display:none;">➡️ Continue Spending</button>
+            <button class="btn ghost" id="btnEnd" style="display:none;">🚪 End Session</button>
+          </div>
+          <div id="budgetMsg" style="margin-top:8px;"></div>
+        </div>`;
+
+      mountGroupSelector(s);
+
+      const budgetRemainingEl = $('#budgetRemaining', s);
+      const budgetMsg = $('#budgetMsg', s);
+      const btnContinue = $('#btnContinue', s);
+      const btnEnd = $('#btnEnd', s);
+
+      function drawBudgetMethod(){
+        const members = extractMembersFromSelector(s);
+        const spend = Number($('#spendAmount', s).value||0);
+        const m = $('#budgetMethod', s).value;
+        const host = $('#budgetMethodFields', s);
+        if(!members.length){ host.innerHTML = '<div class="notice info">Enter/select members to begin.</div>'; return; }
+        if(m==='Evenly'){
+          const each = spend / (members.length||1);
+          host.innerHTML = `<h3>Results</h3>${members.map(n=>`<div>${n} pays: <strong>$${each.toFixed(2)}</strong></div>`).join('')}`;
+        }
+        if(m==='By Percentage'){
+          host.innerHTML = `<div id="bpctWrap">
+            <div class="grid cols-2">${members.map(n=>`<div><label>${n}'s share (%)</label><input data-role="pct" data-name="${n}" type="number" min="0" max="100" step="0.1" value="0"></div>`).join('')}</div>
+            <div class="row" style="margin-top:8px;">Total = <strong id="bpctSum" style="margin:0 6px;">0.0</strong>% <button class="btn ghost" id="btnCalcBPct">Calculate</button></div>
+            <div id="bpctMsg" style="margin-top:8px;"></div>
+            <div id="bpctTable" style="margin-top:6px;"></div>
+          </div>`;
+          $('#btnCalcBPct', host).addEventListener('click', ()=>{
+            const inputs = $$('input[data-role="pct"]', host);
+            const vals = inputs.map(i => ({ name:i.dataset.name, pct:Number(i.value||0) }));
+            const totalPct = vals.reduce((a,b)=>a+b.pct, 0);
+            $('#bpctSum', host).textContent = totalPct.toFixed(1);
+            if(Math.abs(totalPct-100)>0.01){ ui.msg($('#bpctMsg', host),'warn','⚠️ Percentages must total 100%.'); return; }
+            ui.msg($('#bpctMsg', host),'success','✅ Looks good.');
+            $('#bpctTable', host).innerHTML = vals.map(v=>`<div><strong>${v.name}</strong> pays: <strong>$${(spend*(v.pct/100)).toFixed(2)}</strong></div>`).join('');
+          });
+        }
+        if(m==='By Money'){
+          host.innerHTML = `<div id="bamtWrap">
+            <div class="grid cols-2">${members.map(n=>`<div><label>${n}'s contribution ($)</label><input data-role="amt" data-name="${n}" type="number" min="0" step="0.01" value="0"></div>`).join('')}</div>
+            <div class="row" style="margin-top:8px;"><button class="btn ghost" id="btnCalcBAmt">Check</button></div>
+            <div id="bamtMsg" style="margin-top:8px;"></div>
+            <div id="bamtTable" style="margin-top:6px;"></div>
+          </div>`;
+          $('#btnCalcBAmt', host).addEventListener('click', ()=>{
+            const inputs = $$('input[data-role="amt"]', host);
+            const vals = inputs.map(i => ({ name:i.dataset.name, amt:Number(i.value||0) }));
+            const sum = vals.reduce((a,b)=>a+b.amt, 0);
+            if(Math.abs(sum-spend) > 0.01){ ui.msg($('#bamtMsg', host),'warn',`⚠️ The total entered ($${sum.toFixed(2)}) does not match the spend amount ($${spend.toFixed(2)}).`); }
+            else { ui.msg($('#bamtMsg', host),'success','✅ Perfect!'); }
+            $('#bamtTable', host).innerHTML = vals.map(v=>`<div><strong>${v.name}</strong> pays: <strong>$${v.amt.toFixed(2)}</strong></div>`).join('');
+          });
+        }
+      }
+
+      s.addEventListener('input', (e)=>{
+        if(['groupMode','savedGroup','numPeople','memberName','budgetMethod','spendAmount'].some(id => e.target.id===id || e.target.dataset?.role==='memberName')){
+          drawBudgetMethod();
+        }
+      });
+      s.addEventListener('change', (e)=>{
+        if(['groupMode','savedGroup','budgetMethod'].includes(e.target.id)) drawBudgetMethod();
+      });
+      drawBudgetMethod();
+
+      $('#btnApplyBudget', s).addEventListener('click', ()=>{
+        const val = Number($('#budgetTotal', s).value||0);
+        state.budget.set = val; state.budget.remaining = val; state.budget.loop = false;
+        budgetRemainingEl.textContent = `$${state.budget.remaining.toFixed(2)}`;
+        ui.msg(budgetMsg,'success','Budget applied.');
+      });
+      $('#btnResetBudget', s).addEventListener('click', ()=>{
+        state.budget = { remaining:0, set:0, loop:false };
+        $('#budgetTotal', s).value = 0;
+        budgetRemainingEl.textContent = `$0.00`;
+        btnContinue.style.display = 'none'; btnEnd.style.display = 'none';
+        ui.msg(budgetMsg,'success','🔄 Budget has been reset.');
+      });
+
+      $('#btnDoSplit', s).addEventListener('click', ()=>{
+        const spend = Number($('#spendAmount', s).value||0);
+        if(spend <= 0) return ui.msg(budgetMsg,'warn','Please enter an amount greater than 0.');
+        state.budget.remaining -= spend;
+        budgetRemainingEl.textContent = `$${state.budget.remaining.toFixed(2)}`;
+        if(state.budget.remaining > 0){ ui.msg(budgetMsg,'success',`✅ You still have $${state.budget.remaining.toFixed(2)} remaining.`); state.budget.loop = true; }
+        else if(state.budget.remaining === 0){ ui.msg(budgetMsg,'info','💸 You’ve used your entire budget!'); state.budget.loop = false; }
+        else { ui.msg(budgetMsg,'warn',`⚠️ You have overspent by $${Math.abs(state.budget.remaining).toFixed(2)}!`); state.budget.loop = false; }
+        btnContinue.style.display = state.budget.loop ? '' : 'none';
+        btnEnd.style.display = state.budget.loop ? '' : 'none';
+      });
+      btnContinue.addEventListener('click', ()=> renderBudget());
+      btnEnd.addEventListener('click', ()=>{
+        state.budget.loop = false; state.budget.remaining = 0; state.budget.set = 0;
+        renderBudget(); ui.msg(budgetMsg,'success','✅ Budget session ended and reset.');
+      });
+    }
+
+    /* =======================================================
+       Currency Conversion (Premium)
+       ======================================================= */
+    async function fetchRates(){
+      try {
+        const r = await fetch('https://open.er-api.com/v6/latest/USD', { cache:'no-store' });
+        const j = await r.json();
+        if(j && j.rates){ state.rates = j.rates; }
+      } catch(e){
+        // fallback defaults
+        state.rates = { USD:1.0, EUR:0.91, JPY:148.5, MYR:4.6, INR:83.5, SGD:1.35, GBP:0.79, AUD:1.51, CAD:1.36, CHF:0.89, CNY:7.15, HKD:7.82 };
+      }
+    }
+
+    function renderCurrency(){
+      const s = $('#section-currency');
+      const codes = Object.keys(state.rates).sort();
+      function fmt(c){ return `${c} (${state.currencyMap[c]||'Unknown'})`; }
+      s.innerHTML = `
+        <h1>💱 Split + Currency Conversion</h1>
+        ${groupSelector()}
+        <div class="card" id="currForm" style="margin-top:12px;">
+          <div class="grid cols-3">
+            <div>
+              <label>From currency</label>
+              <select id="fromCode">${codes.map(c=>`<option ${c==='USD'?'selected':''}>${c}</option>`).join('')}</select>
+            </div>
+            <div>
+              <label>To currency</label>
+              <select id="toCode">${codes.map(c=>`<option ${c==='USD'?'selected':''}>${c}</option>`).join('')}</select>
+            </div>
+            <div>
+              <label>Total amount (<span id="fromBadge">USD</span>)</label>
+              <input id="currTotal" type="number" min="0" step="0.01" value="0" />
+            </div>
+          </div>
+          <label style="margin-top:10px;">Method</label>
+          <select id="currMethod">
+            <option>Evenly</option>
+            <option>By Percentage</option>
+            <option>By Money</option>
+          </select>
+          <div id="currInfo" class="notice info" style="margin-top:10px;"></div>
+          <div id="currFields" style="margin-top:10px;"></div>
+        </div>`;
+
+      mountGroupSelector(s);
+
+      function updateRateInfo(){
+        const from = $('#fromCode', s).value; const to = $('#toCode', s).value; const total = Number($('#currTotal', s).value||0);
+        $('#fromBadge', s).textContent = from;
+        const rate = (state.rates[to]/state.rates[from]) || 0;
+        const converted = total / state.rates[from] * state.rates[to];
+        $('#currInfo', s).textContent = `💱 1 ${from} = ${rate.toFixed(4)} ${to} • Converted total: ${isFinite(converted)?converted.toFixed(2):'0.00'} ${to}`;
+      }
+
+      function draw(){
+        const members = extractMembersFromSelector(s);
+        const total = Number($('#currTotal', s).value||0);
+        const from = $('#fromCode', s).value; const to = $('#toCode', s).value;
+        const converted = total / state.rates[from] * state.rates[to];
+        const method = $('#currMethod', s).value;
+        const host = $('#currFields', s);
+        if(!members.length || total<=0){ host.innerHTML = '<div class="notice info">Enter members and a total > 0 to begin.</div>'; updateRateInfo(); return; }
+        updateRateInfo();
+        if(method==='Evenly'){
+          const each = converted / members.length;
+          host.innerHTML = `<h3>Results</h3>${members.map(n=>`<div>${n} pays: <strong>${each.toFixed(2)} ${to}</strong></div>`).join('')}`;
+        }
+        if(method==='By Percentage'){
+          host.innerHTML = `<div id="cpctWrap">
+            <div class="grid cols-2">${members.map(n=>`<div><label>${n}'s share (%)</label><input data-role="pct" data-name="${n}" type="number" min="0" max="100" step="0.01" value="0"></div>`).join('')}</div>
+            <div class="row" style="margin-top:8px;">Total = <strong id="cpctSum" style="margin:0 6px;">0.00</strong>% <button class="btn ghost" id="btnCalcCPct">Calculate</button></div>
+            <div id="cpctMsg" style="margin-top:8px;"></div>
+            <div id="cpctTable" style="margin-top:6px;"></div>
+          </div>`;
+          $('#btnCalcCPct', host).addEventListener('click', ()=>{
+            const inputs = $$('input[data-role="pct"]', host);
+            const vals = inputs.map(i => ({ name:i.dataset.name, pct:Number(i.value||0) }));
+            const totalPct = vals.reduce((a,b)=>a+b.pct, 0);
+            $('#cpctSum', host).textContent = totalPct.toFixed(2);
+            if(Math.abs(totalPct-100)>0.01){ ui.msg($('#cpctMsg', host),'warn','⚠️ Total must equal 100%.'); return; }
+            ui.msg($('#cpctMsg', host),'success','✅ Perfect!');
+            $('#cpctTable', host).innerHTML = vals.map(v=>`<div>${v.name} → <strong>${(converted*(v.pct/100)).toFixed(2)} ${to}</strong></div>`).join('');
+          });
+        }
+        if(method==='By Money'){
+          host.innerHTML = `<div id="camtWrap">
+            <div class="grid cols-2">${members.map(n=>`<div><label>${n}'s amount (${to})</label><input data-role="amt" data-name="${n}" type="number" min="0" step="0.01" value="0"></div>`).join('')}</div>
+            <div class="row" style="margin-top:8px;"><button class="btn ghost" id="btnCalcCAmt">Check</button></div>
+            <div id="camtMsg" style="margin-top:8px;"></div>
+            <div id="camtTable" style="margin-top:6px;"></div>
+          </div>`;
+          $('#btnCalcCAmt', host).addEventListener('click', ()=>{
+            const inputs = $$('input[data-role="amt"]', host);
+            const vals = inputs.map(i => ({ name:i.dataset.name, amt:Number(i.value||0) }));
+            const sum = vals.reduce((a,b)=>a+b.amt, 0);
+            if(Math.abs(sum-converted) < 0.01){ ui.msg($('#camtMsg', host),'success','✅ Perfect! Total matches the converted amount.'); }
+            else if(sum > converted){ ui.msg($('#camtMsg', host),'error',`⚠️ Total entered (${sum.toFixed(2)} ${to}) exceeds the converted bill (${converted.toFixed(2)} ${to}).`); }
+            else { ui.msg($('#camtMsg', host),'warn',`⚠️ Total entered (${sum.toFixed(2)} ${to}) is below the converted bill (${converted.toFixed(2)} ${to}).`); }
+            $('#camtTable', host).innerHTML = vals.map(v=>`<div>${v.name} → <strong>${v.amt.toFixed(2)} ${to}</strong></div>`).join('');
+          });
+        }
+      }
+
+      s.addEventListener('input', (e)=>{
+        if(['groupMode','savedGroup','numPeople','memberName','currMethod','currTotal','fromCode','toCode'].some(id => e.target.id===id || e.target.dataset?.role==='memberName')){
+          draw();
+        }
+      });
+      s.addEventListener('change', draw);
+      draw();
+    }
+
+    /* =======================================================
+       Router render
+       ======================================================= */
+    function renderApp(){
+      if(state.route==='auth'){
+        ui.show(authView); ui.hide(appShell);
+        return;
+      }
+      ui.hide(authView); ui.show(appShell);
+
+      if(state.route==='plan'){
+        renderSidebar();
+        $$('.section').forEach(s=>s.classList.remove('active'));
+        $('#section-plan').classList.add('active');
+        renderPlan();
+        return;
+      }
+
+      if(state.route==='main'){
+        renderSidebar();
+        showSection('home');
+      }
+    }
+
+    /* =======================================================
+       Boot
+       ======================================================= */
+    (async function init(){
+      ensureDemoDefaults();
+      const who = localStorage.getItem(LS_CURRENT_USER);
+      if(who){
+        const rec = findUser(who);
+        if(rec){ state.user = rec; state.route = 'plan'; }
+      }
+      await fetchRates();
+      renderApp();
+    })();
+  </script>
+</body>
+</html>
