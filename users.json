@@ -1,0 +1,24 @@
+{
+    "users": [
+        {
+            "username": "weiwen",
+            "password": "$2b$12$1d3qk9dJxuCEOI6YN2GXCeELjjO.kOy4gVK37QpiqWJZbT0GuLnke",
+            "groups": {
+                "chair": [
+                    "ww",
+                    "chel",
+                    "yl"
+                ]
+            },
+            "plan_type": "Premium Solo",
+            "plan_duration": "Monthly"
+        },
+        {
+            "username": "ian",
+            "password": "$2b$12$wQqQA1pg56eYQEdxYNaf0u6ZzjFQ0Ys6mYz3w1PdGFO7fea6dy616",
+            "groups": {},
+            "plan_type": "Basic",
+            "plan_duration": "Monthly"
+        }
+    ]
+}
